@@ -1,0 +1,26 @@
+FROM rust:1.89-bullseye AS builder
+
+WORKDIR /usr/src/berlinproto
+COPY berlinproto .
+WORKDIR /usr/src/berlinpty
+COPY berlinpty .
+RUN cargo build --release
+
+FROM debian:bullseye-slim
+
+# Instal·lem NOMÉS les llibreries que necessita el PTY i Bash
+RUN apt-get update && apt-get install -y \
+    bash \
+    ncurses-base \
+    libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+
+
+COPY --from=builder /usr/src/berlinpty/target/release/berlinpty /usr/local/bin/berlinpty
+RUN chmod +x /usr/local/bin/berlinpty
+
+
+ENTRYPOINT ["berlinpty"]
+CMD ["berlinweb:80"]
+
+
